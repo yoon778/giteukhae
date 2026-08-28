@@ -1,0 +1,21 @@
+#!/bin/sh
+set -eu
+
+blocked_files="$({
+  git diff --cached --name-only --diff-filter=ACMR |
+    grep -Ei '(^|/)\.env($|\.)|(^|/)\.vercel(/|$)|\.ait$' |
+    grep -Evi '(^|/)\.env\.example$'
+} || true)"
+
+if [ -n "$blocked_files" ]; then
+  echo "커밋 중단: 환경파일, Vercel 설정 또는 AIT 파일이 포함됨" >&2
+  echo "$blocked_files" >&2
+  exit 1
+fi
+
+if git diff --cached --no-ext-diff --unified=0 -- . \
+  | grep -Eiq '^\+.*(sk-(proj-)?[A-Za-z0-9_-]{20,}|github_pat_[A-Za-z0-9_]{20,}|gh[pousr]_[A-Za-z0-9]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----)'; then
+  echo "커밋 중단: 비밀키로 보이는 값이 발견됨" >&2
+  exit 1
+fi
+
