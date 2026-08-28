@@ -1,7 +1,19 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { parseProgress } from './progress.ts'
-import { loadStoredValue, parseEntries, saveStoredValue } from './storage.ts'
+import { loadStoredValue, parseEntries, resetAppData, saveStoredValue } from './storage.ts'
+
+test('전체 초기화는 기록, 누적 일수, 만난 동물을 모두 빈 값으로 저장한다', async () => {
+  const saved: unknown[] = []
+
+  await resetAppData({
+    saveEntries: async (value) => { saved.push(value) },
+    saveProgress: async (value) => { saved.push(value) },
+    saveSeenAnimals: async (value) => { saved.push(value) },
+  })
+
+  assert.deepEqual(saved, [{}, { creditedDates: [] }, []])
+})
 
 test('손상된 저장 데이터에서는 유효한 기록만 복구한다', () => {
   const parsed = parseEntries(JSON.stringify({

@@ -7,7 +7,7 @@ import {
   type JournalEntry,
 } from './praise.ts'
 import type { AnimalId } from './animals.ts'
-import { parseProgress, type PraiseProgress } from './progress.ts'
+import { EMPTY_PROGRESS, parseProgress, type PraiseProgress } from './progress.ts'
 import { isDateKey } from './date.ts'
 
 const ENTRIES_KEY = 'giteukhae.entries.v1'
@@ -147,4 +147,20 @@ export async function loadProgress() {
 
 export async function saveProgress(progress: PraiseProgress) {
   await saveStoredValue(PROGRESS_KEY, JSON.stringify(progress))
+}
+
+interface AppDataWriters {
+  saveEntries: typeof saveEntries
+  saveProgress: typeof saveProgress
+  saveSeenAnimals: typeof saveSeenAnimals
+}
+
+export async function resetAppData(
+  writers: AppDataWriters = { saveEntries, saveProgress, saveSeenAnimals },
+) {
+  await Promise.all([
+    writers.saveEntries({}),
+    writers.saveProgress(EMPTY_PROGRESS),
+    writers.saveSeenAnimals([]),
+  ])
 }

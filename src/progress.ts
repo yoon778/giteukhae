@@ -7,6 +7,14 @@ export interface PraiseProgress {
 
 export const EMPTY_PROGRESS: PraiseProgress = { creditedDates: [] }
 
+export function hasResettableData(
+  entryCount: number,
+  progress: PraiseProgress,
+  seenAnimalCount: number,
+) {
+  return entryCount > 0 || progress.creditedDates.length > 0 || seenAnimalCount > 0
+}
+
 export function parseProgress(value: string | null): PraiseProgress {
   if (!value) return EMPTY_PROGRESS
 

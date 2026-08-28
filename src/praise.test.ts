@@ -15,7 +15,14 @@ import {
   removeEntry,
   type JournalEntry,
 } from './praise.ts'
-import { creditDate, mergeProgressWithEntries, type PraiseProgress } from './progress.ts'
+import { creditDate, hasResettableData, mergeProgressWithEntries, type PraiseProgress } from './progress.ts'
+
+test('기록이 없어도 누적 일수나 만난 동물이 있으면 전체 초기화를 노출한다', () => {
+  assert.equal(hasResettableData(0, { creditedDates: ['2026-08-01'] }, 0), true)
+  assert.equal(hasResettableData(0, { creditedDates: [] }, 1), true)
+  assert.equal(hasResettableData(1, { creditedDates: [] }, 0), true)
+  assert.equal(hasResettableData(0, { creditedDates: [] }, 0), false)
+})
 
 test('동물 카탈로그는 추가에 필요한 시각·말투·칭찬 정보를 모두 가진다', () => {
   for (const animalId of ANIMAL_IDS) {

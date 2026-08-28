@@ -14,6 +14,7 @@ import { ANIMALS, type AnimalId } from './animals.ts'
 import {
   EMPTY_PROGRESS,
   creditDate,
+  hasResettableData,
   mergeProgressWithEntries,
   type PraiseProgress,
 } from './progress.ts'
@@ -21,6 +22,7 @@ import {
   loadEntries,
   loadProgress,
   loadSeenAnimals,
+  resetAppData,
   saveEntries,
   saveProgress,
   saveSeenAnimals,
@@ -108,6 +110,7 @@ function App() {
 
   const totalCount = Object.keys(entries).length
   const progressCount = progress.creditedDates.length
+  const canResetApp = hasResettableData(totalCount, progress, seenAnimalIds.length)
   const demoCount = Object.values(entries).filter((entry) => entry.isDemo).length
   const experienceCount = progressCount + (import.meta.env.DEV ? demoCount : 0)
   const todayEntry = entries[todayKey]
@@ -194,20 +197,6 @@ function App() {
     }
   }
 
-  async function handleClearAll() {
-    if (!window.confirm('모든 칭찬 기록을 지울까요? 만난 동물과 해금 진행도는 유지돼요')) return
-
-    try {
-      await saveEntries({})
-      setEntries({})
-      setText('')
-      setSelectedKey(null)
-      setStorageError('')
-    } catch {
-      setStorageError('기록을 지우지 못했어요. 잠시 후 다시 시도해 주세요')
-    }
-  }
-
   function moveDemoDay(offset: number) {
     setDevDayOffset((current) => {
       const next = Math.max(0, current + offset)
@@ -236,10 +225,10 @@ function App() {
   }
 
   async function resetAllData() {
-    if (!window.confirm('기록, 해금 동물, 첫인사를 모두 초기화할까요? 되돌릴 수 없어요')) return
+    if (!window.confirm('모든 기록, 누적 일수, 해금 동물, 첫인사를 지우고 처음부터 시작할까요? 이 작업은 되돌릴 수 없어요')) return
 
     try {
-      await Promise.all([saveEntries({}), saveProgress(EMPTY_PROGRESS), saveSeenAnimals([])])
+      await resetAppData()
       setEntries({})
       setProgress(EMPTY_PROGRESS)
       setSeenAnimalIds([])
@@ -391,7 +380,7 @@ function App() {
 
       <footer>
         <p>작은 일도 알아봐 주면, 제법 대단해짐</p>
-        {totalCount > 0 && <button type="button" onClick={() => void handleClearAll()}>모든 기록 지우기</button>}
+        {canResetApp && <button type="button" onClick={() => void resetAllData()}>처음부터 다시 시작</button>}
       </footer>
 
       {selectedEntry && (
