@@ -4,6 +4,7 @@ import { pickAnimalId, type JournalEntry } from './praise.ts'
 import { toDateKey } from './date.ts'
 import { getVisual } from './visual.ts'
 import { getFamilyPhotoImage, getFamilyPhotoState } from './family-photo.ts'
+import { countEntriesInMonth } from './progress.ts'
 
 function FamilyPhotoScene({ count, src }: { count: number; src: string }) {
   return (
@@ -113,7 +114,7 @@ export function Calendar({
   const monthIndex = month.getMonth()
   const firstWeekday = new Date(year, monthIndex, 1).getDay()
   const daysInMonth = new Date(year, monthIndex + 1, 0).getDate()
-  const entryCount = Object.keys(entries).length
+  const entryCount = countEntriesInMonth(entries, month)
   const cells = Array.from({ length: firstWeekday + daysInMonth }, (_, index) => {
     const day = index - firstWeekday + 1
     return day > 0 ? day : null

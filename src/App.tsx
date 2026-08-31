@@ -13,6 +13,7 @@ import { isAiPraiseConfigured, requestPraise } from './praise-api.ts'
 import type { AnimalId } from './animals.ts'
 import {
   EMPTY_PROGRESS,
+  countEntriesInMonth,
   createJournalSummary,
   creditDate,
   hasResettableData,
@@ -122,6 +123,7 @@ function App() {
     import.meta.env.DEV,
   )
   const canResetApp = hasResettableData(totalCount, progress, seenAnimalIds.length)
+  const monthEntryCount = countEntriesInMonth(entries, month)
   const todayEntry = entries[todayKey]
   const selectedEntry = selectedKey ? entries[selectedKey] : undefined
   const todayAnimalId = todayEntry?.animalId ?? pickAnimalId(todayKey, Math.max(experienceCount + 1, 1))
@@ -372,7 +374,7 @@ function App() {
             onMonthChange={(offset) => setMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1))}
             onSelect={setSelectedKey}
           />
-          {totalCount === 0 && <p className="calendar-empty-copy">아직 받은 도장이 없음<br />오늘 기록부터 하나 남겨보기</p>}
+          {monthEntryCount === 0 && <p className="calendar-empty-copy">이 달에 받은 도장이 없음<br />오늘 기록부터 하나 남겨보기</p>}
           {storageError && <p className="storage-error" role="alert">{storageError}</p>}
         </div>
       )}

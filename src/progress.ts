@@ -7,6 +7,11 @@ export interface PraiseProgress {
 
 export const EMPTY_PROGRESS: PraiseProgress = { creditedDates: [] }
 
+export function countEntriesInMonth(entries: Record<string, JournalEntry>, month: Date) {
+  const prefix = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}-`
+  return Object.keys(entries).filter((date) => date.startsWith(prefix)).length
+}
+
 export function createJournalSummary(
   entries: Record<string, JournalEntry>,
   progress: PraiseProgress,

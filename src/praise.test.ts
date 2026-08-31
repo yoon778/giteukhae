@@ -16,12 +16,24 @@ import {
   type JournalEntry,
 } from './praise.ts'
 import {
+  countEntriesInMonth,
   createJournalSummary,
   creditDate,
   hasResettableData,
   mergeProgressWithEntries,
   type PraiseProgress,
 } from './progress.ts'
+
+test('달력 기록 수는 현재 보고 있는 달만 센다', () => {
+  const entries: Record<string, JournalEntry> = {
+    '2026-08-31': { date: '2026-08-31', text: '8월 기록', praise: '잘했어요' },
+    '2026-09-01': { date: '2026-09-01', text: '9월 기록', praise: '잘했어요' },
+  }
+
+  assert.equal(countEntriesInMonth(entries, new Date(2026, 7, 1)), 1)
+  assert.equal(countEntriesInMonth(entries, new Date(2026, 8, 1)), 1)
+  assert.equal(countEntriesInMonth(entries, new Date(2026, 9, 1)), 0)
+})
 
 test('기록을 모두 지운 뒤에도 해금 진행도와 화면 기록 수를 섞지 않는다', () => {
   const summary = createJournalSummary({}, { creditedDates: ['2026-08-29', '2026-08-30'] }, false)
