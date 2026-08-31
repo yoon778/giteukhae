@@ -54,11 +54,12 @@
 
 가족사진
 
-- `public/family/family-photo-concept-vN.png`에 새 동물이 자리 잡은 완성 사진 제작
-- 빈 거실의 가구·카메라·비율은 기존 사진과 동일하게 유지
-- `src/components.tsx`의 `FAMILY_PHOTO_LAYER_ORDER`에 ID 추가
-- `src/App.css`에 `.family-photo-layer--{id}` 공개 영역 추가
-- 앞서 해금된 동물이나 배경 조각이 먼저 보이지 않는지 중간 단계별 확인
+- 배경은 `public/family/family-room-v1.png` 하나만 사용
+- 동물은 배경이 완전히 투명한 개별 PNG로 준비
+- `src/family-photo.ts`의 `FAMILY_PHOTO_ASSETS`에 이미지 경로 추가
+- `src/App.css`에 `.family-photo-animal--{id}` 위치와 크기 추가
+- 완성 사진을 잘라 쓰거나 `clip-path`로 동물을 분리하지 않음
+- 중간 해금 단계마다 해당 동물만 보이는지 스크린샷 확인
 
 ### 이미지 생성 프롬프트 틀
 

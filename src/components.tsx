@@ -3,21 +3,19 @@ import { ANIMAL_UNLOCKS, type AnimalId } from './animals.ts'
 import { pickAnimalId, type JournalEntry } from './praise.ts'
 import { toDateKey } from './date.ts'
 import { getVisual } from './visual.ts'
-import { getFamilyPhotoState } from './family-photo.ts'
+import { getFamilyPhotoLayers, getFamilyPhotoState, type FamilyPhotoLayer } from './family-photo.ts'
 
-const FAMILY_PHOTO_LAYER_ORDER: AnimalId[] = ['bear', 'rabbit', 'cat', 'duck', 'dog']
-
-function FamilyPhotoScene({ unlockedIds }: { unlockedIds: AnimalId[] }) {
+function FamilyPhotoScene({ layers }: { layers: FamilyPhotoLayer[] }) {
   return (
-    <div className="family-photo-scene" role="img" aria-label={`${unlockedIds.length}마리 동물이 함께 있는 가족사진`}>
+    <div className="family-photo-scene" role="img" aria-label={`${layers.length}마리 동물이 함께 있는 가족사진`}>
       <img className="family-photo-room" src="/family/family-room-v1.png" alt="" aria-hidden="true" />
-      {FAMILY_PHOTO_LAYER_ORDER.filter((animalId) => unlockedIds.includes(animalId)).map((animalId) => (
+      {layers.map(({ id, src }) => (
         <img
-          className={`family-photo-layer family-photo-layer--${animalId}`}
-          src="/family/family-photo-concept-v3.png"
+          className={`family-photo-animal family-photo-animal--${id}`}
+          src={src}
           alt=""
           aria-hidden="true"
-          key={animalId}
+          key={id}
         />
       ))}
     </div>
@@ -27,6 +25,7 @@ function FamilyPhotoScene({ unlockedIds }: { unlockedIds: AnimalId[] }) {
 export function FamilyPhoto({ unlockDayCount }: { unlockDayCount: number }) {
   const [isOpen, setIsOpen] = useState(false)
   const state = getFamilyPhotoState(unlockDayCount)
+  const layers = getFamilyPhotoLayers(unlockDayCount)
   const count = state.unlockedIds.length
 
   useEffect(() => {
@@ -42,7 +41,7 @@ export function FamilyPhoto({ unlockDayCount }: { unlockDayCount: number }) {
     <>
       <section className="family-photo-card" aria-labelledby="family-photo-title">
         <button type="button" onClick={() => setIsOpen(true)} aria-label="가족사진 크게 보기">
-          <FamilyPhotoScene unlockedIds={state.unlockedIds} />
+          <FamilyPhotoScene layers={layers} />
           <span className="family-photo-caption">
             <span>우리 집 가족사진</span>
             <strong id="family-photo-title">{count === 0 ? '아직 빈자리' : `${count}마리와 함께`}</strong>
@@ -57,7 +56,7 @@ export function FamilyPhoto({ unlockDayCount }: { unlockDayCount: number }) {
             <button className="modal-close" type="button" onClick={() => setIsOpen(false)} aria-label="가족사진 닫기">×</button>
             <p className="eyebrow">하나씩 채워지는 중</p>
             <h2 id="family-photo-modal-title">기특해 가족사진</h2>
-            <FamilyPhotoScene unlockedIds={state.unlockedIds} />
+            <FamilyPhotoScene layers={layers} />
             <p>{state.nextName ? `${state.nextName}도 ${state.remainingDays}일 뒤에 같이 찍어요` : '다섯 친구가 모두 모였어요'}</p>
           </section>
         </div>
