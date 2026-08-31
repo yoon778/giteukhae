@@ -1,8 +1,70 @@
-import { useEffect, type CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { ANIMAL_UNLOCKS, type AnimalId } from './animals.ts'
 import { pickAnimalId, type JournalEntry } from './praise.ts'
 import { toDateKey } from './date.ts'
 import { getVisual } from './visual.ts'
+import { getFamilyPhotoState } from './family-photo.ts'
+
+const FAMILY_PHOTO_LAYER_ORDER: AnimalId[] = ['bear', 'rabbit', 'cat', 'duck', 'dog']
+
+function FamilyPhotoScene({ unlockedIds }: { unlockedIds: AnimalId[] }) {
+  return (
+    <div className="family-photo-scene" role="img" aria-label={`${unlockedIds.length}마리 동물이 함께 있는 가족사진`}>
+      <img className="family-photo-room" src="/family/family-room-v1.png" alt="" aria-hidden="true" />
+      {FAMILY_PHOTO_LAYER_ORDER.filter((animalId) => unlockedIds.includes(animalId)).map((animalId) => (
+        <img
+          className={`family-photo-layer family-photo-layer--${animalId}`}
+          src="/family/family-photo-concept-v3.png"
+          alt=""
+          aria-hidden="true"
+          key={animalId}
+        />
+      ))}
+    </div>
+  )
+}
+
+export function FamilyPhoto({ unlockDayCount }: { unlockDayCount: number }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const state = getFamilyPhotoState(unlockDayCount)
+  const count = state.unlockedIds.length
+
+  useEffect(() => {
+    if (!isOpen) return
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setIsOpen(false)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen])
+
+  return (
+    <>
+      <section className="family-photo-card" aria-labelledby="family-photo-title">
+        <button type="button" onClick={() => setIsOpen(true)} aria-label="가족사진 크게 보기">
+          <FamilyPhotoScene unlockedIds={state.unlockedIds} />
+          <span className="family-photo-caption">
+            <span>우리 집 가족사진</span>
+            <strong id="family-photo-title">{count === 0 ? '아직 빈자리' : `${count}마리와 함께`}</strong>
+            <small>{state.nextName ? `${state.nextName}까지 ${state.remainingDays}일` : '모두 모였어요'}</small>
+          </span>
+        </button>
+      </section>
+
+      {isOpen && (
+        <div className="family-photo-modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setIsOpen(false)}>
+          <section className="family-photo-modal" role="dialog" aria-modal="true" aria-labelledby="family-photo-modal-title">
+            <button className="modal-close" type="button" onClick={() => setIsOpen(false)} aria-label="가족사진 닫기">×</button>
+            <p className="eyebrow">하나씩 채워지는 중</p>
+            <h2 id="family-photo-modal-title">기특해 가족사진</h2>
+            <FamilyPhotoScene unlockedIds={state.unlockedIds} />
+            <p>{state.nextName ? `${state.nextName}도 ${state.remainingDays}일 뒤에 같이 찍어요` : '다섯 친구가 모두 모였어요'}</p>
+          </section>
+        </div>
+      )}
+    </>
+  )
+}
 
 export function Mascot({ seed, animalId, className = '' }: { seed: string; animalId?: AnimalId; className?: string }) {
   const { animal } = getVisual(seed, animalId)
@@ -61,6 +123,7 @@ export function Calendar({
   const monthIndex = month.getMonth()
   const firstWeekday = new Date(year, monthIndex, 1).getDay()
   const daysInMonth = new Date(year, monthIndex + 1, 0).getDate()
+  const entryCount = Object.keys(entries).length
   const cells = Array.from({ length: firstWeekday + daysInMonth }, (_, index) => {
     const day = index - firstWeekday + 1
     return day > 0 ? day : null
@@ -71,7 +134,10 @@ export function Calendar({
       <div className="calendar-head">
         <div>
           <p className="eyebrow">날마다 모인 도장</p>
-          <h2 id="calendar-title">{year}년 {monthIndex + 1}월</h2>
+          <div className="calendar-title-row">
+            <h2 id="calendar-title">{year}년 {monthIndex + 1}월</h2>
+            <span>{entryCount}개의 기특한 날</span>
+          </div>
         </div>
         <div className="calendar-nav" aria-label="달력 이동">
           <button type="button" onClick={() => onMonthChange(-1)} aria-label="이전 달">‹</button>

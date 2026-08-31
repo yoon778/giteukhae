@@ -7,6 +7,19 @@ export interface PraiseProgress {
 
 export const EMPTY_PROGRESS: PraiseProgress = { creditedDates: [] }
 
+export function createJournalSummary(
+  entries: Record<string, JournalEntry>,
+  progress: PraiseProgress,
+  includeDemoEntries: boolean,
+) {
+  const values = Object.values(entries)
+  const demoCount = includeDemoEntries ? values.filter((entry) => entry.isDemo).length : 0
+  return {
+    recordCount: values.length,
+    unlockDayCount: progress.creditedDates.length + demoCount,
+  }
+}
+
 export function hasResettableData(
   entryCount: number,
   progress: PraiseProgress,

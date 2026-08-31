@@ -71,7 +71,7 @@
 
 .hero-card {
   position: relative;
-  min-height: 205px;
+  min-height: 162px;
   overflow: hidden;
   border: 1.8px solid #342d29;
   border-radius: 28px 23px 30px 25px;
@@ -84,11 +84,11 @@
   position: relative;
   z-index: 2;
   width: 100%;
-  padding: 27px 0 25px 24px;
+  padding: 20px 0 18px 24px;
 }
 
 .date-label {
-  margin: 0 0 10px;
+  margin: 0 0 7px;
   color: #8d493a;
   font-size: 13px;
   font-weight: 800;
@@ -105,7 +105,7 @@
 }
 
 .hero-copy > p:last-child {
-  margin: 15px 0 0;
+  margin: 11px 0 0;
   color: #716762;
   font-size: 13px;
   line-height: 1.65;
@@ -115,16 +115,15 @@
 .mascot { object-fit: contain; user-select: none; }
 .hero-mascot {
   position: absolute;
-  right: -10px;
-  bottom: -19px;
-  width: 138px;
-  height: 138px;
+  right: -2px;
+  bottom: -12px;
+  width: 112px;
+  height: 112px;
   transform: rotate(3deg);
 }
 
 .journal-card,
-.calendar-card,
-.calendar-intro {
+.calendar-card {
   position: relative;
   margin-top: 18px;
   padding: 25px 22px;
@@ -155,7 +154,7 @@
 
 .journal-card h2,
 .calendar-card h2,
-.calendar-intro h1 {
+.family-photo-modal h2 {
   margin: 0;
   color: #2e2825;
   font-size: 22px;
@@ -345,18 +344,84 @@ textarea:focus { box-shadow: 3px 3px 0 #ffd7a8; }
 .progress-card .progress-status { align-items: flex-end; flex-direction: column; gap: 3px; text-align: right; }
 .progress-status small { color: #bfb4ad; font-size: 10px; }
 
-.calendar-intro { overflow: hidden; min-height: 135px; background: #fff8dc; }
-.calendar-intro > div:first-child { position: relative; z-index: 2; width: 72%; }
-.calendar-intro > div:first-child > span { display: block; margin-top: 9px; color: #776b65; font-size: 11px; line-height: 1.5; }
-.mascot-parade { position: absolute; right: -14px; bottom: -8px; width: 150px; height: 93px; }
-.mascot-parade img { position: absolute; bottom: 0; width: 66px; height: 66px; object-fit: contain; }
-.mascot-parade img:nth-child(1) { left: 0; transform: rotate(-8deg); }
-.mascot-parade img:nth-child(2) { left: 29px; bottom: 18px; transform: rotate(5deg); }
-.mascot-parade img:nth-child(3) { left: 62px; transform: rotate(-3deg); }
-.mascot-parade img:nth-child(4) { left: 87px; bottom: 16px; transform: rotate(7deg); }
-.mascot-parade img:nth-child(5) { left: 113px; }
+.family-photo-card {
+  margin-top: 18px;
+  padding: 8px;
+  border: 1.5px solid #3a322e;
+  border-radius: 23px 27px 22px 25px;
+  background: #fff9e9;
+  box-shadow: 3px 4px 0 rgb(60 48 41 / 8%);
+  transform: rotate(-.15deg);
+}
+.family-photo-card > button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 17px 20px 16px 19px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.family-photo-card > button:focus-visible { outline: 3px solid #d94e55; outline-offset: 2px; }
+.family-photo-scene {
+  position: relative;
+  flex: 0 0 64%;
+  overflow: hidden;
+  aspect-ratio: 3 / 2;
+  border: 1px solid #8f7d6f;
+  border-radius: 14px 11px 15px 12px;
+  background: #f5e8ca;
+}
+.family-photo-room,
+.family-photo-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+.family-photo-layer--bear { clip-path: polygon(12% 5%, 40% 4%, 44% 39%, 38% 47%, 15% 46%, 10% 20%); }
+.family-photo-layer--rabbit { clip-path: polygon(39% 17%, 57% 17%, 63% 34%, 61% 53%, 59% 69%, 39% 69%, 35% 34%); }
+.family-photo-layer--cat { clip-path: polygon(65% 26%, 85% 27%, 89% 48%, 85% 58%, 65% 58%, 63% 38%); }
+.family-photo-layer--duck { clip-path: polygon(8% 50%, 33% 49%, 41% 69%, 37% 92%, 11% 92%, 7% 69%); }
+.family-photo-layer--dog { clip-path: polygon(50% 55%, 73% 54%, 80% 65%, 77% 93%, 53% 93%, 49% 69%); }
+.family-photo-caption { display: flex; min-width: 0; flex: 1; flex-direction: column; padding-right: 8px; }
+.family-photo-caption > span { color: #9d493d; font-size: 10px; font-weight: 900; }
+.family-photo-caption strong { margin-top: 6px; color: #302a27; font-size: 17px; line-height: 1.25; }
+.family-photo-caption small { margin-top: 8px; color: #766a64; font-size: 10px; line-height: 1.4; }
+.family-photo-modal-backdrop {
+  position: fixed;
+  z-index: 35;
+  inset: 0;
+  display: grid;
+  padding: 18px;
+  place-items: center;
+  background: rgb(37 31 28 / 62%);
+  backdrop-filter: blur(3px);
+}
+.family-photo-modal {
+  position: relative;
+  width: min(100%, 520px);
+  padding: 24px 20px 20px;
+  border: 2px solid #302925;
+  border-radius: 26px 22px 29px 24px;
+  background: #fffaf0;
+  box-shadow: 6px 8px 0 rgb(32 25 22 / 22%);
+  animation: modal-pop 220ms ease both;
+}
+.family-photo-modal h2 { margin: 0 0 14px; }
+.family-photo-modal .family-photo-scene { width: 100%; border-width: 1.5px; }
+.family-photo-modal > p:last-child { margin: 13px 0 0; color: #6f635d; font-size: 12px; text-align: center; }
 
 .calendar-head { display: flex; align-items: center; justify-content: space-between; }
+.calendar-title-row { display: flex; align-items: baseline; gap: 8px; }
+.calendar-title-row span { color: #8f837c; font-size: 10px; }
 .calendar-nav { display: flex; gap: 6px; }
 .calendar-nav button {
   width: 40px;
@@ -607,8 +672,10 @@ button:focus-visible, textarea:focus-visible { outline: 3px solid #2f2926; outli
 
 @media (max-width: 390px) {
   .hero-copy { width: 100%; padding-left: 20px; }
-  .hero-mascot { right: -18px; width: 132px; height: 132px; }
-  .journal-card, .calendar-card, .calendar-intro { padding-inline: 18px; }
+  .hero-mascot { right: -9px; width: 108px; height: 108px; }
+  .journal-card, .calendar-card { padding-inline: 18px; }
+  .family-photo-card > button { gap: 9px; }
+  .family-photo-caption strong { font-size: 15px; }
   textarea { min-height: 168px; }
   .note-paper--praised textarea { min-height: 202px; padding-right: 60px; padding-bottom: 58px; }
   .note-stamp-guide { padding-right: 60px; padding-bottom: 58px; }

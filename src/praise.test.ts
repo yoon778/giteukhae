@@ -15,7 +15,19 @@ import {
   removeEntry,
   type JournalEntry,
 } from './praise.ts'
-import { creditDate, hasResettableData, mergeProgressWithEntries, type PraiseProgress } from './progress.ts'
+import {
+  createJournalSummary,
+  creditDate,
+  hasResettableData,
+  mergeProgressWithEntries,
+  type PraiseProgress,
+} from './progress.ts'
+
+test('기록을 모두 지운 뒤에도 해금 진행도와 화면 기록 수를 섞지 않는다', () => {
+  const summary = createJournalSummary({}, { creditedDates: ['2026-08-29', '2026-08-30'] }, false)
+
+  assert.deepEqual(summary, { recordCount: 0, unlockDayCount: 2 })
+})
 
 test('기록이 없어도 누적 일수나 만난 동물이 있으면 전체 초기화를 노출한다', () => {
   assert.equal(hasResettableData(0, { creditedDates: ['2026-08-01'] }, 0), true)

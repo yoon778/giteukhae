@@ -10,9 +10,10 @@ import {
   type JournalEntry,
 } from './praise.ts'
 import { isAiPraiseConfigured, requestPraise } from './praise-api.ts'
-import { ANIMALS, type AnimalId } from './animals.ts'
+import type { AnimalId } from './animals.ts'
 import {
   EMPTY_PROGRESS,
+  createJournalSummary,
   creditDate,
   hasResettableData,
   mergeProgressWithEntries,
@@ -28,7 +29,7 @@ import {
   saveSeenAnimals,
 } from './storage.ts'
 import { shiftDate, toDateKey } from './date.ts'
-import { Calendar, EntryModal, Mascot, Stamp } from './components.tsx'
+import { Calendar, EntryModal, FamilyPhoto, Mascot, Stamp } from './components.tsx'
 import { getVisual } from './visual.ts'
 import './App.css'
 
@@ -108,17 +109,17 @@ function App() {
     }
   }
 
-  const totalCount = Object.keys(entries).length
-  const progressCount = progress.creditedDates.length
+  const { recordCount: totalCount, unlockDayCount: experienceCount } = createJournalSummary(
+    entries,
+    progress,
+    import.meta.env.DEV,
+  )
   const canResetApp = hasResettableData(totalCount, progress, seenAnimalIds.length)
-  const demoCount = Object.values(entries).filter((entry) => entry.isDemo).length
-  const experienceCount = progressCount + (import.meta.env.DEV ? demoCount : 0)
   const todayEntry = entries[todayKey]
   const selectedEntry = selectedKey ? entries[selectedKey] : undefined
   const todayAnimalId = todayEntry?.animalId ?? pickAnimalId(todayKey, Math.max(experienceCount + 1, 1))
   const todayVisual = getVisual(todayKey, todayAnimalId)
   const showTodayPraise = Boolean(todayEntry && text.trim() === todayEntry.text)
-  const unlockedAnimalIds = getUnlockedAnimalIds(experienceCount)
   const nextUnlock = getNextAnimalUnlock(experienceCount)
   const formattedToday = new Intl.DateTimeFormat('ko-KR', {
     month: 'long',
@@ -348,7 +349,7 @@ function App() {
           </section>
 
           <section className="progress-card" aria-label="도장 수집 현황">
-            <div><strong>{experienceCount}</strong><span>번의 기특함</span></div>
+            <div><strong>{totalCount}</strong><span>번의 기특함</span></div>
             <div className="progress-status">
               <p>오늘 담당 <b>{todayVisual.animal.name}</b></p>
               <small>{nextUnlock ? `${nextUnlock.name}까지 ${nextUnlock.min - experienceCount}일` : '모든 친구 해금 완료'}</small>
@@ -357,16 +358,7 @@ function App() {
         </div>
       ) : (
         <div id="calendar-panel" role="tabpanel" aria-labelledby="calendar-tab">
-          <section className="calendar-intro">
-            <div>
-              <p className="eyebrow">모아보니 은근 많음</p>
-              <h1>{totalCount}개의 기특한 날</h1>
-              <span>도장을 누르면 그날 기록이 크게 열려요</span>
-            </div>
-            <div className="mascot-parade" aria-hidden="true">
-              {ANIMALS.filter((animal) => unlockedAnimalIds.includes(animal.id)).map((animal) => <img src={animal.assets.character} alt="" key={animal.id} />)}
-            </div>
-          </section>
+          <FamilyPhoto unlockDayCount={experienceCount} />
           <Calendar
             entries={entries}
             month={month}
