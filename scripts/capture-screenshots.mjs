@@ -135,6 +135,30 @@ async function main() {
     await evaluate("document.querySelector('#calendar-tab').click()")
     await pause(250)
     await capture('01-family-two-friends.png')
+
+    const familyStages = [
+      { days: 1, seen: ['rabbit'], name: 'family-stage-1-rabbit.png' },
+      { days: 3, seen: ['rabbit', 'dog'], name: 'family-stage-2-dog.png' },
+      { days: 5, seen: ['rabbit', 'dog', 'cat'], name: 'family-stage-3-cat.png' },
+      { days: 7, seen: ['rabbit', 'dog', 'cat', 'duck'], name: 'family-stage-4-duck.png' },
+      { days: 10, seen: ['rabbit', 'dog', 'cat', 'duck', 'bear'], name: 'family-stage-5-bear.png' },
+    ]
+    for (const stage of familyStages) {
+      const creditedDates = Array.from(
+        { length: stage.days },
+        (_, index) => `2026-08-${String(index + 1).padStart(2, '0')}`,
+      )
+      await setStored('giteukhae.progress.v1', { creditedDates })
+      await setStored('giteukhae.seenAnimals.v1', stage.seen)
+      await evaluate('location.reload()')
+      await pause(700)
+      await evaluate("document.querySelector('#calendar-tab').click()")
+      await pause(250)
+      await evaluate("document.querySelector('.family-photo-card > button').click()")
+      await pause(250)
+      await capture(stage.name)
+    }
+
     await setStored('giteukhae.progress.v1', { creditedDates: [] })
     await setStored('giteukhae.seenAnimals.v1', ['rabbit'])
     await evaluate('location.reload()')
