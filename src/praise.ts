@@ -74,8 +74,7 @@ export function detectPraiseTopic(text: string): PraiseTopic {
 }
 
 export function getUnlockedAnimalIds(count: number) {
-  const unlocked = ANIMAL_UNLOCKS.filter((animal) => count >= animal.min).map((animal) => animal.id)
-  return unlocked.length > 0 ? unlocked : [ANIMAL_UNLOCKS[0].id]
+  return ANIMAL_UNLOCKS.filter((animal) => count >= animal.min).map((animal) => animal.id)
 }
 
 export function getNextAnimalUnlock(count: number) {
@@ -88,7 +87,8 @@ export function pickAnimalId(seed: string, count: number): AnimalId {
   if (newlyUnlocked) return newlyUnlocked.id
 
   const unlocked = getUnlockedAnimalIds(count)
-  return unlocked[hash(seed) % unlocked.length]
+  const available = unlocked.length > 0 ? unlocked : [ANIMAL_UNLOCKS[0].id]
+  return available[hash(seed) % available.length]
 }
 
 export function createPraise(text: string, count: number, animalId: AnimalId = 'rabbit', revision = 0) {

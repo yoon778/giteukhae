@@ -60,15 +60,22 @@ function App() {
     void Promise.all([loadEntries(), loadSeenAnimals(), loadProgress()]).then(([saved, seen, storedProgress]) => {
       if (cancelled) return
       const mergedProgress = mergeProgressWithEntries(storedProgress, saved)
+      const unlockedAnimalIds = getUnlockedAnimalIds(mergedProgress.creditedDates.length)
+      const validSeen = seen.filter((animalId) => unlockedAnimalIds.includes(animalId))
       setEntries(saved)
       setProgress(mergedProgress)
-      setSeenAnimalIds(seen)
+      setSeenAnimalIds(validSeen)
       setText(saved[todayKey]?.text ?? '')
       setMonth(new Date(today.getFullYear(), today.getMonth(), 1))
       if (!greetingChecked.current) {
-        const greeting = getUnlockedAnimalIds(mergedProgress.creditedDates.length).find((animalId) => !seen.includes(animalId))
+        const greeting = unlockedAnimalIds.find((animalId) => !validSeen.includes(animalId))
         setGreetingAnimalId(greeting ?? null)
         greetingChecked.current = true
+      }
+      if (validSeen.length !== seen.length) {
+        void saveSeenAnimals(validSeen).catch(() => {
+          if (!cancelled) setStorageError('첫인사 순서를 바로잡지 못했어요')
+        })
       }
       if (mergedProgress.creditedDates.length !== storedProgress.creditedDates.length) {
         void saveProgress(mergedProgress).catch(() => {
@@ -233,7 +240,7 @@ function App() {
       setEntries({})
       setProgress(EMPTY_PROGRESS)
       setSeenAnimalIds([])
-      setGreetingAnimalId('rabbit')
+      setGreetingAnimalId(null)
       setSelectedKey(null)
       setText('')
       resetDemoDay()

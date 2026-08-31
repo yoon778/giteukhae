@@ -36,6 +36,14 @@ test('기록이 없어도 누적 일수나 만난 동물이 있으면 전체 초
   assert.equal(hasResettableData(0, { creditedDates: [] }, 0), false)
 })
 
+test('해금 안내는 토끼부터 순서대로 시작한다', () => {
+  assert.deepEqual(getUnlockedAnimalIds(0), [])
+  assert.deepEqual(
+    [0, 1, 3, 5, 7].map((count) => getNextAnimalUnlock(count)?.id),
+    ['rabbit', 'dog', 'cat', 'duck', 'bear'],
+  )
+})
+
 test('동물 카탈로그는 추가에 필요한 시각·말투·칭찬 정보를 모두 가진다', () => {
   for (const animalId of ANIMAL_IDS) {
     const animal = ANIMAL_CATALOG[animalId]
@@ -152,7 +160,7 @@ test('누적 일수에 따라 동물이 순서대로 해금된다', () => {
   assert.deepEqual(getUnlockedAnimalIds(1), ['rabbit'])
   assert.deepEqual(getUnlockedAnimalIds(5), ['rabbit', 'dog', 'cat'])
   assert.equal(pickAnimalId('2026-08-25', 7), 'duck')
-  assert.equal(getNextAnimalUnlock(0)?.id, 'dog')
+  assert.equal(getNextAnimalUnlock(0)?.id, 'rabbit')
   assert.equal(getNextAnimalUnlock(3)?.id, 'cat')
 })
 
