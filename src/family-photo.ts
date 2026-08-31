@@ -6,19 +6,6 @@ export interface FamilyPhotoState {
   remainingDays: number
 }
 
-export interface FamilyPhotoLayer {
-  id: AnimalId
-  src: string
-}
-
-const FAMILY_PHOTO_ASSETS: Record<AnimalId, string> = {
-  rabbit: '/characters/rabbit-v2.png',
-  dog: '/characters/dog-v2.png',
-  cat: '/characters/cat-v2.png',
-  duck: '/characters/duck-v2.png',
-  bear: '/characters/bear-v2.png',
-}
-
 export function getFamilyPhotoState(unlockDayCount: number): FamilyPhotoState {
   const unlockedIds = ANIMAL_UNLOCKS
     .filter((animal) => unlockDayCount >= animal.min)
@@ -32,9 +19,9 @@ export function getFamilyPhotoState(unlockDayCount: number): FamilyPhotoState {
   }
 }
 
-export function getFamilyPhotoLayers(unlockDayCount: number): FamilyPhotoLayer[] {
-  return getFamilyPhotoState(unlockDayCount).unlockedIds.map((id) => ({
-    id,
-    src: FAMILY_PHOTO_ASSETS[id],
-  }))
+export function getFamilyPhotoImage(unlockDayCount: number): string {
+  const count = getFamilyPhotoState(unlockDayCount).unlockedIds.length
+  return count === 0
+    ? '/family/family-room-v1.png'
+    : `/family/family-photo-stage-${count}.png`
 }

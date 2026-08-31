@@ -54,12 +54,12 @@
 
 가족사진
 
-- 배경은 `public/family/family-room-v1.png` 하나만 사용
-- 동물은 배경이 완전히 투명한 개별 PNG로 준비
-- `src/family-photo.ts`의 `FAMILY_PHOTO_ASSETS`에 이미지 경로 추가
-- `src/App.css`에 `.family-photo-animal--{id}` 위치와 크기 추가
-- 완성 사진을 잘라 쓰거나 `clip-path`로 동물을 분리하지 않음
-- 중간 해금 단계마다 해당 동물만 보이는지 스크린샷 확인
+- 빈방은 `public/family/family-room-v1.png` 사용
+- 해금 수별 완성 사진은 `public/family/family-photo-stage-{수}.png`로 준비
+- 기존 전체 가족사진의 구도·포즈·크기·배경을 고정하고 미해금 동물만 제거
+- CSS 조각 자르기나 서로 다른 캐릭터 이미지 합성은 사용하지 않음
+- `src/family-photo.ts`의 `getFamilyPhotoImage`가 해금 수에 맞는 사진 선택
+- 모든 중간 단계에서 동물 수와 잔상 여부를 스크린샷 확인
 
 ### 이미지 생성 프롬프트 틀
 
