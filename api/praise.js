@@ -127,7 +127,7 @@ export function isEchoLikeComment(sourceText, comment) {
   if (source.length < 10 || response.length < 10) return false
 
   const copiedLength = longestCommonSubsequenceLength(source, response)
-  return copiedLength / Math.min(source.length, response.length) >= 0.72
+  return copiedLength / Math.min(source.length, response.length) >= 0.64
 }
 
 function createUnclearResult(input) {

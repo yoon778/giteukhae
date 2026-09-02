@@ -120,6 +120,10 @@ test('원문을 거의 그대로 옮긴 코멘트는 거절한다', () => {
     true,
   )
   assert.equal(
+    isEchoLikeComment(source, '오늘 학교 수업을 졸지 않고 끝까지 집중해 정말 멋졌다.'),
+    true,
+  )
+  assert.equal(
     isEchoLikeComment(source, '어이구, 졸음도 잘 이겨냈구나. 그 집중력에 도장 꾹!'),
     false,
   )
