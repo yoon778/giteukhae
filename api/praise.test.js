@@ -3,6 +3,7 @@ import test from 'node:test'
 import handler, {
   isAllowedOrigin,
   isClearlyUnclearInput,
+  isEchoLikeComment,
   parseOpenAIResult,
   parsePraiseRequest,
 } from './praise.js'
@@ -109,4 +110,17 @@ test('Responses API의 구조화 출력을 앱 응답으로 변환한다', () =>
     topic: 'selfCare',
     comment: '오늘을 버틴 마음도 충분히 칭찬받을 만해요',
   })
+})
+
+test('원문을 거의 그대로 옮긴 코멘트는 거절한다', () => {
+  const source = '학교에 가서 수업을 졸지 않고 들었다'
+
+  assert.equal(
+    isEchoLikeComment(source, '오늘 학교 수업을 졸지 않고 끝까지 들었다.'),
+    true,
+  )
+  assert.equal(
+    isEchoLikeComment(source, '어이구, 졸음도 잘 이겨냈구나. 그 집중력에 도장 꾹!'),
+    false,
+  )
 })
