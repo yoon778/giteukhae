@@ -2,6 +2,7 @@
   <img src="assets/app-icon-light.png" width="112" alt="기특해 곰 얼굴 앱 아이콘" />
   <h1>기특해: 칭찬일기</h1>
   <p>오늘 잘한 일 한 줄에 동물 친구가 칭찬 도장을 찍어주는 앱인토스 미니앱</p>
+  <p><a href="https://minion.toss.im/Bw9g6nEe"><strong>토스에서 기특해 열기</strong></a></p>
   <p><strong>Apps in Toss 출시</strong> · React · TypeScript · Vercel · OpenAI</p>
   <a href="https://github.com/yoon778/giteukhae/actions/workflows/ci.yml"><img src="https://github.com/yoon778/giteukhae/actions/workflows/ci.yml/badge.svg" alt="CI 상태" /></a>
 </div>
