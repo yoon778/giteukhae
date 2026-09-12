@@ -306,7 +306,7 @@ export default async function handler(request, response) {
         ...(safetyIdentifier ? { safety_identifier: safetyIdentifier } : {}),
         store: false,
       }),
-      signal: AbortSignal.timeout(4_800),
+      signal: AbortSignal.timeout(15_000),
     })
 
     if (!aiResponse.ok) {

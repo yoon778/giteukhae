@@ -3,7 +3,7 @@
   "outputDirectory": "dist",
   "functions": {
     "api/praise.js": {
-      "maxDuration": 10
+      "maxDuration": 20
     },
     "api/drawing.js": {
       "maxDuration": 60
