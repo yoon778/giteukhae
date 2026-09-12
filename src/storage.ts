@@ -1,6 +1,7 @@
 import { Storage } from '@apps-in-toss/web-framework'
 import {
   isKnownAnimalId,
+  isDrawingDataUrl,
   isPraiseResponseKind,
   MAX_ENTRY_TEXT_LENGTH,
   MAX_PRAISE_LENGTH,
@@ -105,6 +106,7 @@ export function parseEntries(value: string | null): Record<string, JournalEntry>
         text: entry.text,
         praise: entry.praise,
       }
+      if (isDrawingDataUrl(entry.drawingDataUrl)) restored.drawingDataUrl = entry.drawingDataUrl
       if (typeof entry.animalId === 'string' && isKnownAnimalId(entry.animalId)) restored.animalId = entry.animalId
       if (Number.isInteger(entry.praiseRevision) && Number(entry.praiseRevision) >= 0 && Number(entry.praiseRevision) <= 100) {
         restored.praiseRevision = Number(entry.praiseRevision)

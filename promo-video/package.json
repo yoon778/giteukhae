@@ -1,0 +1,22 @@
+{
+  "name": "giteukhae-promo-video",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.tsx",
+    "render": "remotion render src/index.tsx GiteukhaeReel ../assets/promo/giteukhae-reel-v2-with-sound.mp4 --codec=h264 --crf=18",
+    "cover": "remotion still src/index.tsx ReelCover ../assets/promo/giteukhae-reel-cover-v1.png"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.523",
+    "@remotion/media": "4.0.523",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "remotion": "4.0.523"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.17",
+    "typescript": "6.0.2"
+  }
+}

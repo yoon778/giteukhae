@@ -6,6 +6,7 @@ import {
   createConfusedResponse,
   detectPraiseTopic,
   getNextAnimalUnlock,
+  getPendingGreetingAnimalId,
   getNextPraiseRevision,
   getUnlockedAnimalIds,
   isKnownAnimalId,
@@ -51,9 +52,17 @@ test('기록이 없어도 누적 일수나 만난 동물이 있으면 전체 초
 test('해금 안내는 토끼부터 순서대로 시작한다', () => {
   assert.deepEqual(getUnlockedAnimalIds(0), [])
   assert.deepEqual(
-    [0, 1, 3, 5, 7].map((count) => getNextAnimalUnlock(count)?.id),
-    ['rabbit', 'dog', 'cat', 'duck', 'bear'],
+    [0, 1, 3, 5, 7, 10, 14, 18].map((count) => getNextAnimalUnlock(count)?.id),
+    ['rabbit', 'dog', 'cat', 'duck', 'bear', 'capybara', 'hedgehog', 'owl'],
   )
+})
+
+test('기존 기록이 있어도 첫인사는 자동 화면이 아닌 대기 카드로 계산한다', () => {
+  const unlocked = getUnlockedAnimalIds(5)
+
+  assert.equal(getPendingGreetingAnimalId(unlocked, []), 'rabbit')
+  assert.equal(getPendingGreetingAnimalId(unlocked, ['rabbit']), 'dog')
+  assert.equal(getPendingGreetingAnimalId(unlocked, ['rabbit', 'dog', 'cat']), null)
 })
 
 test('동물 카탈로그는 추가에 필요한 시각·말투·칭찬 정보를 모두 가진다', () => {
@@ -62,8 +71,8 @@ test('동물 카탈로그는 추가에 필요한 시각·말투·칭찬 정보�
 
     assert.ok(animal.name)
     assert.ok(animal.unlockAt >= 1)
-    assert.match(animal.assets.character, /^\/characters\/.+\.png$/)
-    assert.match(animal.assets.stamp, /^\/stamps\/.+\.png$/)
+    assert.match(animal.assets.character, /^\/(?:season2\/)?characters\/.+\.png$/)
+    assert.match(animal.assets.stamp, /^\/(?:season2\/)?stamps\/.+\.webp$/)
     assert.ok(animal.greeting)
     assert.ok(animal.visualTraits.length >= 2)
     assert.ok(animal.voice.tone)
@@ -174,6 +183,9 @@ test('누적 일수에 따라 동물이 순서대로 해금된다', () => {
   assert.equal(pickAnimalId('2026-08-25', 7), 'duck')
   assert.equal(getNextAnimalUnlock(0)?.id, 'rabbit')
   assert.equal(getNextAnimalUnlock(3)?.id, 'cat')
+  assert.deepEqual(getUnlockedAnimalIds(14).slice(-2), ['bear', 'capybara'])
+  assert.deepEqual(getUnlockedAnimalIds(23).slice(-3), ['capybara', 'hedgehog', 'owl'])
+  assert.equal(pickAnimalId('2026-09-07', 18), 'hedgehog')
 })
 
 test('동물마다 다른 말투로 칭찬한다', () => {

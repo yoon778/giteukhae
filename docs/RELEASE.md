@@ -47,7 +47,12 @@ npm run build
 1. 업로드 후 `테스트하기` 선택
 2. QR 또는 `intoss-private://` 테스트 스킴으로 토스앱 실행
 3. 최소 1회 테스트 완료
-4. 기록 작성, AI 한마디, 칭찬 다시 받기, 재실행 후 저장 유지, 이전 달 이동, 지난 기록 열람 확인
+4. 신규 사용자에서 앱 진입 직후 메인 화면이 바로 보이는지 확인
+5. 기존 기록 보유 사용자에서 첫인사 카드만 보이고 전체 인사 화면은 자동으로 열리지 않는지 확인
+6. 기록 작성, AI 한마디, 칭찬 다시 받기, 재실행 후 저장 유지, 이전 달 이동, 지난 기록 열람 확인
+7. 네트워크 차단 상태에서 로컬 칭찬으로 대체되는지 확인
+8. 월간 기록 1~3개 선택 후 추억 카드 이미지 저장 확인
+9. 360px·390px·430px 화면과 Safe Area가 큰 기기에서 잘림 확인
 
 공식 문서: https://developers-apps-in-toss.toss.im/development/test/toss.html
 
@@ -85,5 +90,6 @@ npm run build
 - 고객문의 이메일과 앱 정보 입력
 - `docs/PRIVACY.md`를 검토해 공개 HTTPS 개인정보처리방침으로 게시
 - OpenAI 프로젝트 예산 알림과 Vercel WAF 요청 제한 설정
+- Upstash Redis를 연결하고 `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` 등록
 - 실제 토스앱 QR 테스트
 - 챌린지 신청폼 제출

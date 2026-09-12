@@ -4,6 +4,9 @@
   "functions": {
     "api/praise.js": {
       "maxDuration": 10
+    },
+    "api/drawing.js": {
+      "maxDuration": 60
     }
   },
   "headers": [

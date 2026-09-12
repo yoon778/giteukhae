@@ -39,6 +39,11 @@ test('칭찬 요청의 글·동물·수정 횟수를 검증한다', () => {
   assert.equal(parsePraiseRequest({ text: '잘했다', animalId: 'fox', revision: 0 }), null)
   assert.equal(parsePraiseRequest({ text: '잘했다', animalId: '__proto__', revision: 0 }), null)
   assert.equal(parsePraiseRequest({ text: '잘했다', animalId: 'constructor', revision: 0 }), null)
+  assert.deepEqual(parsePraiseRequest({ text: ' 편지를 정리했다 ', animalId: 'hedgehog', revision: 0 }), {
+    text: '편지를 정리했다',
+    animalId: 'hedgehog',
+    revision: 0,
+  })
 })
 
 test('명백한 반복 입력은 AI 호출 전에 의미 없음으로 분류한다', async () => {

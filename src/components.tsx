@@ -1,24 +1,41 @@
-import { useEffect, useState, type CSSProperties } from 'react'
-import { ANIMAL_UNLOCKS, type AnimalId } from './animals.ts'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { ANIMAL_UNLOCKS, getAnimal, type AnimalId } from './animals.ts'
 import { pickAnimalId, type JournalEntry } from './praise.ts'
 import { toDateKey } from './date.ts'
 import { getVisual } from './visual.ts'
-import { getFamilyPhotoImage, getFamilyPhotoState } from './family-photo.ts'
+import { getFamilyPhotoImage, getFamilyPhotoState, type FamilySeason } from './family-photo.ts'
 import { countEntriesInMonth } from './progress.ts'
+import { getDefaultMemoryDates, getMonthlyEntries, toggleMemoryDate } from './memory.ts'
+import { saveMonthlyMemoryCard } from './memory-card.ts'
+import { logProductEvent } from './analytics.ts'
 
 function FamilyPhotoScene({ count, src }: { count: number; src: string }) {
   return (
     <div className="family-photo-scene" role="img" aria-label={`${count}마리 동물이 함께 있는 가족사진`}>
-      <img className="family-photo-image" src={src} alt="" aria-hidden="true" />
+      <img className="family-photo-image" src={src} alt="" aria-hidden="true" loading="lazy" decoding="async" />
     </div>
   )
 }
 
-export function FamilyPhoto({ unlockDayCount }: { unlockDayCount: number }) {
+const FAMILY_PHOTO_COPY = {
+  1: { label: '시즌 1 · 우리 집', title: '기특해 가족사진' },
+  2: { label: '시즌 2 · 별빛 우체국', title: '별빛 우체국 가족사진' },
+} as const
+
+export function FamilyPhoto({
+  unlockDayCount,
+  season = 1,
+}: {
+  unlockDayCount: number
+  season?: FamilySeason
+}) {
   const [isOpen, setIsOpen] = useState(false)
-  const state = getFamilyPhotoState(unlockDayCount)
+  const state = getFamilyPhotoState(unlockDayCount, season)
   const count = state.unlockedIds.length
-  const image = getFamilyPhotoImage(unlockDayCount)
+  const image = getFamilyPhotoImage(unlockDayCount, season)
+  const copy = FAMILY_PHOTO_COPY[season]
+  const cardTitleId = `family-photo-title-${season}`
+  const modalTitleId = `family-photo-modal-title-${season}`
 
   useEffect(() => {
     if (!isOpen) return
@@ -31,12 +48,12 @@ export function FamilyPhoto({ unlockDayCount }: { unlockDayCount: number }) {
 
   return (
     <>
-      <section className="family-photo-card" aria-labelledby="family-photo-title">
+      <section className="family-photo-card" aria-labelledby={cardTitleId}>
         <button type="button" onClick={() => setIsOpen(true)} aria-label="가족사진 크게 보기">
           <FamilyPhotoScene count={count} src={image} />
           <span className="family-photo-caption">
-            <span>우리 집 가족사진</span>
-            <strong id="family-photo-title">{count === 0 ? '아직 빈자리' : `${count}마리와 함께`}</strong>
+            <span>{copy.label}</span>
+            <strong id={cardTitleId}>{count === 0 ? '아직 빈자리' : `${count}마리와 함께`}</strong>
             <small>{state.nextName ? `${state.nextName}까지 ${state.remainingDays}일` : '모두 모였어요'}</small>
           </span>
         </button>
@@ -44,12 +61,12 @@ export function FamilyPhoto({ unlockDayCount }: { unlockDayCount: number }) {
 
       {isOpen && (
         <div className="family-photo-modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setIsOpen(false)}>
-          <section className="family-photo-modal" role="dialog" aria-modal="true" aria-labelledby="family-photo-modal-title">
+          <section className="family-photo-modal" role="dialog" aria-modal="true" aria-labelledby={modalTitleId}>
             <button className="modal-close" type="button" onClick={() => setIsOpen(false)} aria-label="가족사진 닫기">×</button>
             <p className="eyebrow">하나씩 채워지는 중</p>
-            <h2 id="family-photo-modal-title">기특해 가족사진</h2>
+            <h2 id={modalTitleId}>{copy.title}</h2>
             <FamilyPhotoScene count={count} src={image} />
-            <p>{state.nextName ? `${state.nextName}도 ${state.remainingDays}일 뒤에 같이 찍어요` : '다섯 친구가 모두 모였어요'}</p>
+            <p>{state.nextName ? `${state.nextName}도 ${state.remainingDays}일 뒤에 같이 찍어요` : `${count}마리 친구가 모두 모였어요`}</p>
           </section>
         </div>
       )}
@@ -86,6 +103,50 @@ export function Stamp({ seed, animalId, large = false }: { seed: string; animalI
   )
 }
 
+export function DiaryDrawing({ entry, compact = false }: {
+  entry: JournalEntry
+  compact?: boolean
+}) {
+  if (!entry.drawingDataUrl) return null
+
+  return (
+    <figure className={`diary-drawing${compact ? ' diary-drawing--compact' : ''}`}>
+      <span className="drawing-tape" aria-hidden="true" />
+      <img
+        src={entry.drawingDataUrl}
+        alt="오늘의 한 줄을 동물 친구들이 표현한 파스텔 그림"
+        draggable="false"
+      />
+    </figure>
+  )
+}
+
+export function DrawingLoading({ animalIds }: { animalIds: AnimalId[] }) {
+  return (
+    <div className="drawing-loading" role="status" aria-live="polite">
+      <div className="drawing-loading-scene" aria-hidden="true">
+        <div className="drawing-loading-paper"><i /><i /><i /></div>
+        <span className="drawing-loading-crayon" />
+        <div
+          className="drawing-loading-friends"
+          style={{ '--drawing-friend-count': animalIds.length } as CSSProperties}
+        >
+          {animalIds.map((animalId, index) => (
+            <img
+              key={animalId}
+              src={getAnimal(animalId).assets.character}
+              alt=""
+              style={{ '--drawing-friend-index': index } as CSSProperties}
+            />
+          ))}
+        </div>
+      </div>
+      <strong>동물 친구들이 그림 그리는 중…</strong>
+      <small>삐뚤빼뚤 색칠하고 있어요</small>
+    </div>
+  )
+}
+
 function MiniStamp({ seed, animalId }: { seed: string; animalId?: AnimalId }) {
   const { animal, turn } = getVisual(seed, animalId)
   return (
@@ -96,6 +157,62 @@ function MiniStamp({ seed, animalId }: { seed: string; animalId?: AnimalId }) {
     >
       <img src={animal.assets.character} alt="" />
     </span>
+  )
+}
+
+export function MonthlyMemoryCard({ entries, month }: {
+  entries: Record<string, JournalEntry>
+  month: Date
+}) {
+  const monthlyEntries = useMemo(() => getMonthlyEntries(entries, month), [entries, month])
+  const [selectedDates, setSelectedDates] = useState(() => getDefaultMemoryDates(monthlyEntries))
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+
+  if (monthlyEntries.length === 0) return null
+  const selectedEntries = monthlyEntries.filter((entry) => selectedDates.includes(entry.date))
+
+  async function handleSave() {
+    if (selectedEntries.length === 0 || saveState === 'saving') return
+    setSaveState('saving')
+    try {
+      await saveMonthlyMemoryCard(selectedEntries, month)
+      setSaveState('saved')
+      logProductEvent('memory_card_saved', { entry_count: selectedEntries.length })
+    } catch {
+      setSaveState('error')
+    }
+  }
+
+  return (
+    <section className="monthly-memory-card" aria-labelledby="monthly-memory-title">
+      <p className="eyebrow">이번 달 다시 보기</p>
+      <h2 id="monthly-memory-title">기특한 순간 카드</h2>
+      <p>간직하고 싶은 기록을 최대 3개 골라요</p>
+      <div className="monthly-memory-options">
+        {monthlyEntries.map((entry) => {
+          const selected = selectedDates.includes(entry.date)
+          return (
+            <button
+              key={entry.date}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => {
+                setSelectedDates((current) => toggleMemoryDate(current, entry.date))
+                setSaveState('idle')
+              }}
+            >
+              <span>{Number(entry.date.slice(-2))}일</span>
+              <strong>{entry.text}</strong>
+              <i aria-hidden="true">{selected ? '✓' : '+'}</i>
+            </button>
+          )
+        })}
+      </div>
+      <button className="monthly-memory-save" type="button" disabled={selectedEntries.length === 0 || saveState === 'saving'} onClick={() => void handleSave()}>
+        {saveState === 'saving' ? '카드 만드는 중…' : saveState === 'saved' ? '카드를 저장했어요' : '카드 이미지 저장하기'}
+      </button>
+      {saveState === 'error' && <small className="monthly-memory-error" role="alert">카드를 저장하지 못했어요. 잠시 후 다시 눌러 주세요</small>}
+    </section>
   )
 }
 
@@ -194,11 +311,14 @@ export function EntryModal({
       <section className="entry-modal" role="dialog" aria-modal="true" aria-labelledby="entry-modal-title">
         <button className="modal-close" type="button" onClick={onClose} aria-label="기록 닫기">×</button>
         <p className="modal-date">{formattedDate}</p>
-        <div className="modal-visuals"><Stamp seed={entry.date} animalId={animalId} large /></div>
         <div className="modal-note">
           <span>이날 내가 잘한 일</span>
           <h2 id="entry-modal-title">{entry.text}</h2>
+          <span className="modal-note-stamp" aria-hidden="true">
+            <Stamp seed={entry.date} animalId={animalId} />
+          </span>
         </div>
+        <DiaryDrawing entry={entry} compact />
         <div className="modal-comment">
           <span>그날의 한마디</span>
           <p>“{entry.praise}”</p>

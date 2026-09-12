@@ -185,14 +185,14 @@ async function main() {
     const animalIds = ['rabbit', 'dog', 'cat', 'duck', 'bear']
     const entries = {}
     const creditedDates = []
-    for (let day = 14; day <= Math.min(now.getDate(), 26); day += 1) {
+    for (let day = 1; day <= Math.min(now.getDate(), 6); day += 1) {
       const date = `${year}-${month}-${String(day).padStart(2, '0')}`
       creditedDates.push(date)
       entries[date] = {
         date,
         text: ['10분 산책을 했다', '설거지를 미루지 않았다', '오늘도 잘 버텼다'][day % 3],
         praise: ['한 걸음 움직인 오늘, 정말 멋져요!', '귀찮은 일을 해낸 건 확실히 기특해요!', '오늘을 버틴 마음에도 도장 꾹!'][day % 3],
-        animalId: animalIds[(day - 14) % animalIds.length],
+        animalId: animalIds[(day - 1) % animalIds.length],
         responseKind: 'praise',
       }
     }
@@ -204,6 +204,14 @@ async function main() {
     await evaluate("document.querySelector('#calendar-tab').click()")
     await pause(350)
     await capture('05-calendar.png')
+    await evaluate("document.querySelector('.monthly-memory-card').scrollIntoView({ block: 'center' })")
+    await pause(250)
+    await capture('07-memory-card.png')
+    await evaluate("document.querySelector('.monthly-memory-save').click()")
+    await pause(500)
+    const memorySave = await evaluate("document.querySelector('.monthly-memory-save').textContent")
+    if (!memorySave.result.value.includes('저장했어요')) throw new Error('월간 추억 카드 저장 실패')
+    await evaluate("document.querySelector('.family-photo-card').scrollIntoView({ block: 'center' })")
     await evaluate("document.querySelector('.family-photo-card > button').click()")
     await pause(250)
     await capture('05-family-expanded.png')
@@ -212,6 +220,42 @@ async function main() {
     await evaluate("document.querySelector('.calendar-day--done').click()")
     await pause(250)
     await capture('06-detail.png')
+
+    await evaluate("document.querySelector('.entry-modal .modal-close').click()")
+    await setStored('giteukhae.progress.v1', {
+      creditedDates: ['2026-08-01', '2026-08-02', '2026-08-03', '2026-08-04', '2026-08-05'],
+    })
+    await setStored('giteukhae.seenAnimals.v1', [])
+    await evaluate('location.reload()')
+    await pause(900)
+    const greetingState = await evaluate(`({
+      invitation: Boolean(document.querySelector('.friend-invitation')),
+      blockingGreeting: Boolean(document.querySelector('.greeting-scene')),
+    })`)
+    if (!greetingState.result.value.invitation || greetingState.result.value.blockingGreeting) {
+      throw new Error('첫 진입 화면이 사용자 선택형 첫인사 카드 조건을 만족하지 않음')
+    }
+
+    for (const width of [360, 390, 430]) {
+      await command('Emulation.setDeviceMetricsOverride', {
+        width,
+        height: 844,
+        deviceScaleFactor: 1,
+        mobile: true,
+        screenWidth: width,
+        screenHeight: 844,
+      })
+      await pause(150)
+      const layout = await evaluate(`({
+        width: innerWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+        invitationVisible: document.querySelector('.friend-invitation')?.getBoundingClientRect().height > 0,
+      })`)
+      if (layout.result.value.scrollWidth > width || !layout.result.value.invitationVisible) {
+        throw new Error(`${width}px 화면 레이아웃 오류: ${JSON.stringify(layout.result.value)}`)
+      }
+    }
+    await capture('08-friend-invitation.png')
 
     socket.close()
   } finally {

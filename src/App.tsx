@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import {
   getNextAnimalUnlock,
+  getPendingGreetingAnimalId,
   getNextPraiseRevision,
   getUnlockedAnimalIds,
   MAX_ENTRY_TEXT_LENGTH,
@@ -10,6 +11,7 @@ import {
   type JournalEntry,
 } from './praise.ts'
 import { isAiPraiseConfigured, requestPraise } from './praise-api.ts'
+import { isAiDrawingConfigured, requestDrawing } from './drawing-api.ts'
 import type { AnimalId } from './animals.ts'
 import {
   EMPTY_PROGRESS,
@@ -30,8 +32,10 @@ import {
   saveSeenAnimals,
 } from './storage.ts'
 import { shiftDate, toDateKey } from './date.ts'
-import { Calendar, EntryModal, FamilyPhoto, Mascot, Stamp } from './components.tsx'
+import { Calendar, DiaryDrawing, DrawingLoading, EntryModal, FamilyPhoto, Mascot, MonthlyMemoryCard, Stamp } from './components.tsx'
 import { getVisual } from './visual.ts'
+import { logProductEvent } from './analytics.ts'
+import { getDrawingClientKey } from './user-key.ts'
 import './App.css'
 
 function App() {
@@ -50,11 +54,18 @@ function App() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isStamping, setIsStamping] = useState(false)
+  const [isDrawing, setIsDrawing] = useState(false)
   const [progress, setProgress] = useState<PraiseProgress>(EMPTY_PROGRESS)
   const [seenAnimalIds, setSeenAnimalIds] = useState<AnimalId[]>([])
   const [greetingAnimalId, setGreetingAnimalId] = useState<AnimalId | null>(null)
+  const [isGreetingOpen, setIsGreetingOpen] = useState(false)
   const [storageError, setStorageError] = useState('')
+  const [drawingError, setDrawingError] = useState('')
   const greetingChecked = useRef(false)
+
+  useEffect(() => {
+    logProductEvent('app_open')
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -69,7 +80,7 @@ function App() {
       setText(saved[todayKey]?.text ?? '')
       setMonth(new Date(today.getFullYear(), today.getMonth(), 1))
       if (!greetingChecked.current) {
-        const greeting = unlockedAnimalIds.find((animalId) => !validSeen.includes(animalId))
+        const greeting = getPendingGreetingAnimalId(unlockedAnimalIds, validSeen)
         setGreetingAnimalId(greeting ?? null)
         greetingChecked.current = true
       }
@@ -100,8 +111,15 @@ function App() {
     return () => window.clearInterval(timer)
   }, [])
 
+  useEffect(() => {
+    if (greetingAnimalId) {
+      logProductEvent('friend_invitation_shown', { animal_id: greetingAnimalId })
+    }
+  }, [greetingAnimalId])
+
   async function dismissGreeting() {
     if (!greetingAnimalId) return
+    setIsGreetingOpen(false)
     const isPersistedFriend = getUnlockedAnimalIds(progress.creditedDates.length).includes(greetingAnimalId)
     if (devDayOffset !== 0 || !isPersistedFriend) {
       setGreetingAnimalId(null)
@@ -139,7 +157,7 @@ function App() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const trimmed = text.trim()
-    if (!trimmed || isSaving || isStamping) return
+    if (!trimmed || isSaving || isStamping || isDrawing) return
 
     setIsSaving(true)
 
@@ -154,17 +172,21 @@ function App() {
       revision: praiseRevision,
     })
     const nextProgress = creditDate(progress, todayKey, isDemo)
+    const nextEntry: JournalEntry = {
+      date: todayKey,
+      text: trimmed,
+      praise: praiseResult.comment,
+      praiseRevision,
+      responseKind: praiseResult.kind,
+      animalId,
+      isDemo: todayEntry?.isDemo ?? isDemo,
+      ...(todayEntry?.text === trimmed && todayEntry.drawingDataUrl
+        ? { drawingDataUrl: todayEntry.drawingDataUrl }
+        : {}),
+    }
     const next = {
       ...entries,
-      [todayKey]: {
-        date: todayKey,
-        text: trimmed,
-        praise: praiseResult.comment,
-        praiseRevision,
-        responseKind: praiseResult.kind,
-        animalId,
-        isDemo: todayEntry?.isDemo ?? isDemo,
-      },
+      [todayKey]: nextEntry,
     }
 
     try {
@@ -186,13 +208,59 @@ function App() {
     setEntries(next)
     setProgress(nextProgress)
     setStorageError(progressError)
+    setDrawingError('')
     setIsSaving(false)
+    logProductEvent('entry_saved', {
+      animal_id: animalId,
+      is_new_entry: !todayEntry,
+      ai_configured: isAiPraiseConfigured(),
+    })
     setIsStamping(true)
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     window.setTimeout(() => setIsStamping(false), reduceMotion ? 80 : 2100)
   }
 
+  async function handleCreateDrawing() {
+    if (!todayEntry || todayEntry.drawingDataUrl || isDrawing) return
+
+    setIsDrawing(true)
+    setDrawingError('')
+    logProductEvent('drawing_requested', { animal_count: getUnlockedAnimalIds(experienceCount).length })
+    const clientKey = await getDrawingClientKey()
+    const result = await requestDrawing({
+      text: todayEntry.text,
+      animalIds: getUnlockedAnimalIds(experienceCount),
+      clientKey,
+    })
+
+    if (!result.ok) {
+      logProductEvent('drawing_failed', { reason: result.reason })
+      setDrawingError(result.reason === 'unavailable'
+        ? '이 내용은 그림으로 만들기 어려워요'
+        : result.reason === 'limit'
+          ? '오늘의 그림은 이미 완성했어요. 내일 다시 만나요'
+          : '그림을 가져오지 못했어요. 잠시 후 다시 눌러 주세요')
+      setIsDrawing(false)
+      return
+    }
+
+    const next = {
+      ...entries,
+      [todayKey]: { ...todayEntry, drawingDataUrl: result.imageDataUrl },
+    }
+    try {
+      await saveEntries(next)
+      setEntries(next)
+      logProductEvent('drawing_succeeded', { animal_count: getUnlockedAnimalIds(experienceCount).length })
+    } catch {
+      setDrawingError('그림을 기기에 저장하지 못했어요')
+    } finally {
+      setIsDrawing(false)
+    }
+  }
+
   async function handleDelete(date: string) {
+    if (isDrawing) return
     if (!window.confirm('이 칭찬 기록을 지울까요? 지운 기록은 복구할 수 없어요')) return
 
     const next = removeEntry(entries, date)
@@ -202,6 +270,7 @@ function App() {
       setSelectedKey(null)
       if (date === todayKey) setText('')
       setStorageError('')
+      setDrawingError('')
     } catch {
       setStorageError('기록을 지우지 못했어요. 잠시 후 다시 시도해 주세요')
     }
@@ -221,6 +290,7 @@ function App() {
   }
 
   async function clearDemoEntries() {
+    if (isDrawing) return
     const next = Object.fromEntries(Object.entries(entries).filter(([, entry]) => !entry.isDemo))
     try {
       await saveEntries(next)
@@ -229,12 +299,14 @@ function App() {
       setText('')
       resetDemoDay()
       setStorageError('')
+      setDrawingError('')
     } catch {
       setStorageError('테스트 기록을 지우지 못했어요')
     }
   }
 
   async function resetAllData() {
+    if (isDrawing) return
     if (!window.confirm('모든 기록, 누적 일수, 해금 동물, 첫인사를 지우고 처음부터 시작할까요? 이 작업은 되돌릴 수 없어요')) return
 
     try {
@@ -243,10 +315,12 @@ function App() {
       setProgress(EMPTY_PROGRESS)
       setSeenAnimalIds([])
       setGreetingAnimalId(null)
+      setIsGreetingOpen(false)
       setSelectedKey(null)
       setText('')
       resetDemoDay()
       setStorageError('')
+      setDrawingError('')
     } catch {
       setStorageError('앱 데이터를 초기화하지 못했어요')
     }
@@ -255,6 +329,13 @@ function App() {
   function selectTab(tab: 'write' | 'calendar') {
     setActiveTab(tab)
     setSelectedKey(null)
+    logProductEvent('tab_selected', { tab })
+  }
+
+  function openGreeting() {
+    if (!greetingAnimalId) return
+    setIsGreetingOpen(true)
+    logProductEvent('friend_invitation_opened', { animal_id: greetingAnimalId })
   }
 
   if (isLoading) return <main className="loading">칭찬 동물 고르는 중…</main>
@@ -265,7 +346,7 @@ function App() {
         <img src={todayVisual.animal.assets.character} alt="" aria-hidden="true" />
         <div>
           <strong>기특해</strong>
-          <span>오늘도 잘한 게 하나는 있어</span>
+          <span>오늘도 잘한 일이 하나는 있어요</span>
         </div>
       </header>
 
@@ -293,13 +374,34 @@ function App() {
         </button>
       </nav>
 
+      {greetingAnimalId && (
+        <button
+          className={`friend-invitation friend-invitation--${greetingAnimalId}`}
+          type="button"
+          onClick={openGreeting}
+          aria-haspopup="dialog"
+          aria-label={`${getVisual(todayKey, greetingAnimalId).animal.name} 친구의 첫인사 보기`}
+        >
+          <span className="friend-invitation-copy">
+            <small>새 친구가 찾아왔어요</small>
+            <strong>{getVisual(todayKey, greetingAnimalId).animal.name} 친구의 첫인사</strong>
+            <span>눌러서 만나기</span>
+          </span>
+          <Mascot
+            seed={`${todayKey}-invitation`}
+            animalId={greetingAnimalId}
+            className="friend-invitation-mascot"
+          />
+        </button>
+      )}
+
       {activeTab === 'write' ? (
         <div id="write-panel" role="tabpanel" aria-labelledby="write-tab">
           <section className="hero-card" style={{ '--hero-tint': todayVisual.animal.colors.heroTint } as CSSProperties}>
             <div className="hero-copy">
               <p className="date-label">{formattedToday}</p>
-              <h1>{todayEntry ? '오늘도 일단 잘했음' : '오늘 뭐가 기특했나요?'}</h1>
-              <p>대단하지 않아도 한 줄이면 도장 찍어줌</p>
+              <h1>{todayEntry ? '오늘도 잘한 일을 남겼어요' : '오늘 뭐가 기특했나요?'}</h1>
+              <p>대단하지 않아도 한 줄이면 도장을 찍어줘요</p>
             </div>
             <Mascot seed={todayKey} animalId={todayAnimalId} className="hero-mascot" />
           </section>
@@ -309,15 +411,17 @@ function App() {
             <p className="eyebrow">오늘의 장한 일</p>
             <h2 id="journal-title">한 줄 칭찬 일기</h2>
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} aria-busy={isDrawing}>
               <label className="sr-only" htmlFor="proud-note">오늘 잘한 일</label>
               <div className={`note-paper${showTodayPraise ? ' note-paper--praised' : ''}`}>
                 <textarea
                   id="proud-note"
                   value={text}
                   maxLength={MAX_ENTRY_TEXT_LENGTH}
+                  readOnly={isDrawing}
                   onChange={(event) => {
                     setText(event.target.value)
+                    setDrawingError('')
                   }}
                   placeholder="예: 귀찮았지만 설거지를 바로 했다"
                   rows={3}
@@ -333,8 +437,11 @@ function App() {
               </div>
               <div className="form-meta">
                 <span>{text.length}/{MAX_ENTRY_TEXT_LENGTH}</span>
-                <span>{isAiPraiseConfigured() ? '기록은 기기에 저장 · 한 줄은 AI에 전송' : '내 기기에만 보관됨'}</span>
+                <span>{isAiPraiseConfigured() ? '기록은 기기에 저장해요 · 한 줄은 AI에 보내요' : '내 기기에만 보관해요'}</span>
               </div>
+              {showTodayPraise && todayEntry?.drawingDataUrl && (
+                <DiaryDrawing entry={todayEntry} />
+              )}
               {showTodayPraise && todayEntry && (
                 <div
                   className={`teacher-comment${shouldShowUnclearReaction(todayEntry.responseKind) ? ' teacher-comment--confused' : ''}`}
@@ -348,12 +455,28 @@ function App() {
                   </div>
                 </div>
               )}
-              <button className="stamp-button" type="submit" disabled={!text.trim() || isSaving || isStamping}>
+              {showTodayPraise
+                && todayEntry
+                && !todayEntry.drawingDataUrl
+                && !shouldShowUnclearReaction(todayEntry.responseKind)
+                && isAiDrawingConfigured()
+                && (
+                  isDrawing
+                    ? <DrawingLoading animalIds={getUnlockedAnimalIds(experienceCount)} />
+                    : (
+                      <div className="drawing-action">
+                        <button type="button" onClick={() => void handleCreateDrawing()}>오늘의 그림도 그려볼까요?</button>
+                        <small>오늘 한 번 · 해금된 친구들이 함께 그려요</small>
+                      </div>
+                    )
+                )}
+              {drawingError && <p className="drawing-error" role="alert">{drawingError}</p>}
+              <button className="stamp-button" type="submit" disabled={!text.trim() || isSaving || isStamping || isDrawing}>
                 {isSaving ? '한마디 고르는 중…' : todayEntry ? '칭찬 다시 받기' : '칭찬 도장 받기'}
               </button>
             </form>
 
-            {todayEntry && <button className="delete-button today-delete" type="button" onClick={() => void handleDelete(todayKey)}>오늘 기록 지우기</button>}
+            {todayEntry && <button className="delete-button today-delete" type="button" onClick={() => void handleDelete(todayKey)} disabled={isDrawing}>오늘 기록 지우기</button>}
             {storageError && <p className="storage-error" role="alert">{storageError}</p>}
           </section>
 
@@ -361,27 +484,29 @@ function App() {
             <div><strong>{totalCount}</strong><span>번의 기특함</span></div>
             <div className="progress-status">
               <p>오늘 담당 <b>{todayVisual.animal.name}</b></p>
-              <small>{nextUnlock ? `${nextUnlock.name}까지 ${nextUnlock.min - experienceCount}일` : '모든 친구 해금 완료'}</small>
+              <small>{nextUnlock ? `${nextUnlock.name}까지 ${nextUnlock.min - experienceCount}일` : '모든 친구를 만났어요'}</small>
             </div>
           </section>
         </div>
       ) : (
         <div id="calendar-panel" role="tabpanel" aria-labelledby="calendar-tab">
           <FamilyPhoto unlockDayCount={experienceCount} />
+          {experienceCount >= 10 && <FamilyPhoto unlockDayCount={experienceCount} season={2} />}
           <Calendar
             entries={entries}
             month={month}
             onMonthChange={(offset) => setMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1))}
             onSelect={setSelectedKey}
           />
-          {monthEntryCount === 0 && <p className="calendar-empty-copy">이 달에 받은 도장이 없음<br />오늘 기록부터 하나 남겨보기</p>}
+          <MonthlyMemoryCard key={`${month.getFullYear()}-${month.getMonth()}`} entries={entries} month={month} />
+          {monthEntryCount === 0 && <p className="calendar-empty-copy">이달에 받은 도장이 아직 없어요<br />오늘 기록부터 하나 남겨봐요</p>}
           {storageError && <p className="storage-error" role="alert">{storageError}</p>}
         </div>
       )}
 
       <footer>
-        <p>작은 일도 알아봐 주면, 제법 대단해짐</p>
-        {canResetApp && <button type="button" onClick={() => void resetAllData()}>처음부터 다시 시작</button>}
+        <p>작은 일도 알아봐 주면, 제법 대단해져요</p>
+        {canResetApp && <button type="button" onClick={() => void resetAllData()} disabled={isDrawing}>처음부터 다시 시작</button>}
       </footer>
 
       {selectedEntry && (
@@ -401,7 +526,7 @@ function App() {
         </div>
       )}
 
-      {greetingAnimalId && (
+      {greetingAnimalId && isGreetingOpen && (
         <button
           className={`greeting-scene greeting-scene--${greetingAnimalId}`}
           type="button"
@@ -428,9 +553,9 @@ function App() {
             <button type="button" onClick={() => moveDemoDay(1)}>다음 날 +1</button>
             <button type="button" onClick={() => moveDemoDay(5)}>다음 날 +5</button>
             <button type="button" onClick={resetDemoDay}>실제 오늘로</button>
-            <button type="button" onClick={() => setGreetingAnimalId(todayAnimalId)}>현재 동물 첫인사</button>
-            <button type="button" onClick={() => void clearDemoEntries()}>테스트 기록 제거</button>
-            <button type="button" onClick={() => void resetAllData()}>앱 데이터 전체 초기화</button>
+            <button type="button" onClick={() => { setGreetingAnimalId(todayAnimalId); setIsGreetingOpen(true) }}>현재 동물 첫인사</button>
+            <button type="button" onClick={() => void clearDemoEntries()} disabled={isDrawing}>테스트 기록 제거</button>
+            <button type="button" onClick={() => void resetAllData()} disabled={isDrawing}>앱 데이터 전체 초기화</button>
           </div>
         </details>
       )}

@@ -54,12 +54,25 @@
 
 가족사진
 
-- 빈방은 `public/family/family-room-v1.png` 사용
-- 해금 수별 완성 사진은 `public/family/family-photo-stage-{수}.png`로 준비
+- 빈방은 `public/family/family-room-v1.webp` 사용
+- 해금 수별 완성 사진은 `public/family/family-photo-stage-{수}.webp`로 준비
 - 기존 전체 가족사진의 구도·포즈·크기·배경을 고정하고 미해금 동물만 제거
 - CSS 조각 자르기나 서로 다른 캐릭터 이미지 합성은 사용하지 않음
 - `src/family-photo.ts`의 `getFamilyPhotoImage`가 해금 수에 맞는 사진 선택
 - 모든 중간 단계에서 동물 수와 잔상 여부를 스크린샷 확인
+
+시즌 2 별빛 우체국
+
+| 누적 날짜 | 동물 | 역할 |
+|---:|---|---|
+| 14일 | 카피바라 | 우체국장 |
+| 18일 | 고슴도치 | 편지 분류원 |
+| 23일 | 부엉이 | 밤하늘 배달부 |
+
+- 캐릭터: `public/season2/characters/`
+- 도장: `public/season2/stamps/`
+- 가족사진: `public/season2/family/starlight-post-office-stage-{0~3}-v1.webp`
+- 시즌 1 완성 후 별빛 우체국 빈 사진부터 함께 노출
 
 ### 이미지 생성 프롬프트 틀
 
@@ -91,7 +104,7 @@ Keep the silhouette readable at 76px.
 - `selfCare`: 식사, 물, 수면, 휴식
 - `default`: 어느 주제에도 속하지 않는 일
 
-## 카피바라 추가 예시
+## 카피바라 등록 예시
 
 카탈로그 방향
 
@@ -100,8 +113,8 @@ capybara: {
   name: '카피바라',
   unlockAt: 14,
   assets: {
-    character: '/characters/capybara-v1.png',
-    stamp: '/stamps/capybara-held-v1.png',
+    character: '/season2/characters/capybara-postmaster-v1.png',
+    stamp: '/season2/stamps/capybara-postmark-v1.webp',
   },
   colors: { ink: '#8a5b3d', tint: '#fff1df', heroTint: '#e8f5e8' },
   greeting: '왔어?',

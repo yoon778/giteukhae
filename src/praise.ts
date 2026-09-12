@@ -10,6 +10,7 @@ export interface JournalEntry {
   date: string
   text: string
   praise: string
+  drawingDataUrl?: string
   praiseRevision?: number
   responseKind?: PraiseResponseKind
   animalId?: AnimalId
@@ -18,6 +19,12 @@ export interface JournalEntry {
 
 export const MAX_ENTRY_TEXT_LENGTH = 80
 export const MAX_PRAISE_LENGTH = 120
+export const MAX_DRAWING_DATA_URL_LENGTH = 2_500_000
+
+export function isDrawingDataUrl(value: unknown): value is string {
+  if (typeof value !== 'string' || value.length > MAX_DRAWING_DATA_URL_LENGTH) return false
+  return /^data:image\/webp;base64,[A-Za-z0-9+/]+={0,2}$/.test(value)
+}
 
 export const PRAISE_RESPONSE_KINDS = ['praise', 'emotion', 'unclear', 'playful'] as const
 export type PraiseResponseKind = typeof PRAISE_RESPONSE_KINDS[number]
@@ -80,6 +87,10 @@ export function getUnlockedAnimalIds(count: number) {
 export function getNextAnimalUnlock(count: number) {
   const unlocked = getUnlockedAnimalIds(count)
   return ANIMAL_UNLOCKS.find((animal) => !unlocked.includes(animal.id))
+}
+
+export function getPendingGreetingAnimalId(unlocked: AnimalId[], seen: AnimalId[]) {
+  return unlocked.find((animalId) => !seen.includes(animalId)) ?? null
 }
 
 export function pickAnimalId(seed: string, count: number): AnimalId {
