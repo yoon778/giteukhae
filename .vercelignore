@@ -1,0 +1,9 @@
+.env*
+*.ait
+*.md
+api/*.test.js
+assets/
+docs/
+promo-video/
+scripts/
+src/*.test.ts
