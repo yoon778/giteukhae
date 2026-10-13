@@ -5,6 +5,7 @@
   <p><a href="https://minion.toss.im/Bw9g6nEe"><strong>토스에서 기특해 열기</strong></a></p>
   <p><strong>Apps in Toss 출시</strong> · React · TypeScript · Vercel · OpenAI</p>
   <a href="https://github.com/yoon778/giteukhae/actions/workflows/ci.yml"><img src="https://github.com/yoon778/giteukhae/actions/workflows/ci.yml/badge.svg" alt="CI 상태" /></a>
+  <p><a href="#화면-미리보기">화면 미리보기</a> · <a href="#핵심-구현">핵심 구현</a> · <a href="#로컬-실행">로컬 실행</a> · <a href="https://github.com/yoon778">개발자 프로필</a></p>
 </div>
 
 ![기특해 대표 이미지](assets/github-social-preview.jpg)
@@ -26,9 +27,11 @@
 3. 손으로 찍는 듯한 칭찬 도장 애니메이션
 4. 날짜별 기록과 도장을 달력에서 다시 확인
 5. 누적 기록에 따라 동물과 가족사진 해금
-6. 월간 기록 3개를 골라 추억 카드 이미지로 저장
+6. 월간 기록을 최대 3개 골라 추억 카드 이미지로 저장
 
-## 화면
+## 화면 미리보기
+
+저장소에 포함된 앱 UI 캡처다. 예시 기록으로 작성부터 칭찬, 회고와 수집까지의 흐름을 보여준다.
 
 <p align="center">
   <img src="assets/screenshots/02-writing.png" width="31%" alt="오늘 잘한 일을 입력하는 화면" />
@@ -36,16 +39,20 @@
   <img src="assets/screenshots/05-calendar.png" width="31%" alt="날짜별 칭찬 도장 달력 화면" />
 </p>
 
+<p align="center"><sub>한 줄 작성 · 동물의 칭찬과 도장 · 날짜별 기록 달력</sub></p>
+
 <p align="center">
   <img src="assets/screenshots/06-detail.png" width="31%" alt="지난 기록 상세 화면" />
-  <img src="assets/screenshots/family-stage-1-rabbit.png" width="31%" alt="토끼가 해금된 가족사진 화면" />
+  <img src="assets/screenshots/07-memory-card.png" width="31%" alt="월간 기록을 최대 세 개 고르는 추억 카드 화면" />
   <img src="assets/screenshots/family-stage-5-bear.png" width="31%" alt="다섯 동물이 모두 해금된 가족사진 화면" />
 </p>
+
+<p align="center"><sub>지난 기록 다시 보기 · 추억 카드 만들기 · 시즌 1 가족사진 완성</sub></p>
 
 ## 주요 기능
 
 - 하루 한 줄 기록과 날짜별 저장
-- 토끼, 강아지, 고양이, 오리, 곰 순차 해금
+- 시즌 1의 토끼·강아지·고양이·오리·곰과 시즌 2의 카피바라·고슴도치·부엉이 순차 해금
 - 해금된 동물의 랜덤 등장과 첫인사
 - 동물별 말투를 적용한 AI 칭찬
 - 해금된 동물들이 한 줄의 행동을 표현하는 선택형 파스텔 그림
@@ -62,11 +69,10 @@
 ```mermaid
 flowchart LR
   U[앱인토스 사용자] --> A[React 미니앱]
-  A --> S[Apps in Toss Storage]
+  A --> S[Apps in Toss Storage / localStorage]
   A --> V[Vercel Serverless API]
-  V --> O[OpenAI Responses API]
-  O --> V
-  V --> A
+  V --> P[OpenAI Responses API: 칭찬]
+  V --> D[OpenAI Images API: 선택형 그림]
 ```
 
 | 영역 | 구성 | 선택 이유 |
@@ -74,26 +80,41 @@ flowchart LR
 | 미니앱 | React 19, TypeScript, Vite | 앱인토스 Web Framework와 빠른 개발 |
 | 기기 저장 | Apps in Toss `Storage`, `localStorage` 대체 | 별도 계정·DB 없이 기록 유지 |
 | AI 서버 | Vercel Serverless Function | API 키를 번들에서 분리 |
-| AI | OpenAI Responses API, `gpt-5-nano` | 짧은 분류·한마디 생성에 맞춘 비용 |
+| AI 칭찬 | OpenAI Responses API, 기본 모델 `gpt-5-nano` | 입력 분류와 동물별 한마디를 구조화된 응답으로 처리 |
+| AI 그림 | OpenAI Images API | 동물 참조 이미지와 사용자의 한 줄을 반영한 선택형 그림 |
 | 품질 | Node Test Runner, oxlint, TypeScript | 핵심 로직 회귀와 정적 오류 방지 |
 
-## 개발 중 해결한 문제
+## 핵심 구현
 
 ### 기기 저장소와 브라우저 저장소 불일치
 
 저장값에 수정 시각을 포함한 envelope를 적용했다. 두 저장소에서 더 최신인 값을 복원해 앱 재실행 후 기록 수와 달력이 달라지는 문제를 방지했다.
 
+[저장·복원 구현](src/storage.ts) · [저장소 실패·복구 테스트](src/storage.test.ts)
+
 ### 기록 수와 해금 일수 혼동
 
 전체 기록 수, 월별 기록 수, 해금에 사용되는 고유 날짜 수를 분리했다. 개발용 가상 날짜는 실제 해금 진행도에 포함하지 않는다.
+
+[진행도 계산](src/progress.ts) · [동물 카탈로그](src/animals.ts) · [기록 삭제·해금 테스트](src/praise.test.ts)
 
 ### AI의 과도한 추측
 
 입력에 없는 행동·감정·의도를 만들지 않도록 지시하고 결과를 JSON Schema로 제한했다. 의미가 불분명한 입력은 `unclear`로 분류하며, 네트워크 실패 시 앱 내부 코멘트로 대체한다.
 
+[서버 요청·응답 검증](api/praise.js) · [클라이언트 대체 처리](src/praise-api.ts) · [응답 검증 테스트](src/praise-api.test.ts)
+
 ### 가족사진 단계별 잔상
 
 완성 사진을 CSS로 잘라 쓰는 대신 해금 단계별 완전한 이미지를 사용했다. 각 단계의 동물 수와 주변 잔상을 스크린샷으로 검증한다.
+
+[시즌별 이미지 선택](src/family-photo.ts) · [해금 단계 테스트](src/family-photo.test.ts) · [기존 UI 캡처](assets/screenshots)
+
+### 기록을 다시 꺼내 보는 추억 카드
+
+현재 달의 기록 중 최대 3개를 선택해 Canvas로 한 장의 PNG를 만든다. 토스에서는 `TossFile.saveBase64`를 사용하고, 브라우저에서는 다운로드 링크로 저장한다.
+
+[월간 기록 선택](src/memory.ts) · [카드 생성·저장](src/memory-card.ts) · [선택 개수 테스트](src/memory.test.ts)
 
 ## 보안과 개인정보
 
@@ -107,7 +128,7 @@ flowchart LR
 
 자세한 내용은 [AI API 규격](docs/AI_API.md), [개인정보 처리 안내 초안](docs/PRIVACY.md) 참고
 
-## 실행
+## 로컬 실행
 
 요구 환경: Node.js 22 이상
 
@@ -115,6 +136,8 @@ flowchart LR
 npm ci
 npm run dev
 ```
+
+AI 주소를 설정하지 않아도 기록·달력과 로컬 동물 코멘트를 확인할 수 있다. AI 칭찬과 그림을 사용하려면 별도 서버 연결이 필요하다.
 
 AI 서버 연결 시 `.env.example`을 참고해 로컬 개발용 `.env.local`을 작성한다.
 
@@ -146,3 +169,7 @@ npm run build
 - [개인정보 처리 안내 초안](docs/PRIVACY.md)
 - [앱인토스 등록·출시 절차](docs/RELEASE.md)
 - [동물 시스템과 품질 테스트 기록](docs/testing/animal-system-and-quality.tdd.md)
+
+## 함께 보기
+
+[개발자 프로필](https://github.com/yoon778) · [말사이](https://github.com/yoon778/mal-sai) · [윈프 게임](https://github.com/yoon778/26_WinAPI_No_Save_Love_Project)
