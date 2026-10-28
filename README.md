@@ -3,12 +3,19 @@
   <h1>기특해: 칭찬일기</h1>
   <p>오늘 잘한 일 한 줄에 동물 친구가 칭찬 도장을 찍어주는 앱인토스 미니앱</p>
   <p><a href="https://minion.toss.im/Bw9g6nEe"><strong>토스에서 기특해 열기</strong></a></p>
-  <p><strong>Apps in Toss 출시</strong> · React · TypeScript · Vercel · OpenAI</p>
+  <p><strong>앱 · Apps in Toss 출시</strong> · React · TypeScript · Vercel · OpenAI</p>
   <a href="https://github.com/yoon778/giteukhae/actions/workflows/ci.yml"><img src="https://github.com/yoon778/giteukhae/actions/workflows/ci.yml/badge.svg" alt="CI 상태" /></a>
   <p><a href="#화면-미리보기">화면 미리보기</a> · <a href="#핵심-구현">핵심 구현</a> · <a href="#로컬-실행">로컬 실행</a> · <a href="https://github.com/yoon778">개발자 프로필</a></p>
 </div>
 
 ![기특해 대표 이미지](assets/github-social-preview.jpg)
+
+| 구분 | 내용 |
+| --- | --- |
+| **사용 흐름** | 한 줄 기록 → 동물 칭찬과 도장 → 달력 회고 → 가족사진·추억 카드 |
+| **저장과 복원** | Apps in Toss Storage와 localStorage의 수정 시각을 비교해 기록 복원 |
+| **AI 연결** | 서버에서 요청·응답 검증, 실패 시 로컬 코멘트로 대체 |
+| **핵심 코드** | [저장](src/storage.ts) · [해금 진행도](src/progress.ts) · [AI 응답 검증](api/praise.js) · [추억 카드](src/memory-card.ts) |
 
 ## 프로젝트 소개
 
